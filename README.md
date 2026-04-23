@@ -1,5 +1,3 @@
-Viewed start-02-unit-typed-arrays.html:1-637
-
 針對 **`start-02-unit-typed-arrays` (數據解析與類型化陣列 Typed Arrays)** 單元，這是學員從「標籤化數據」邁向「位元級操作」的技術分水嶺。它要求學員具備 **底層數據處理 (Binary Data Manipulation)** 的意識，學習如何跳出 JSON 的舒適圈，利用 `ArrayBuffer` 與 `TypedArray` 進行記憶體級別的操作，並掌握「位元組順序 (Endianness)」這項跨平台通訊的必備知識。
 
 以下是在 **GitHub Classroom** 部署其作業 (Assignments) 的具體建議：
