@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 02: Typed Arrays & Binary Protocols</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>02. Typed Arrays Lab</h1>
+            <p style="color: var(--text-secondary)">Mastering Binary Data Manipulation & Endianness</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- Lab 1: Motor Encoder -->
+            <section class="card">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                    Motor Encoder Lab
+                </h2>
+                <div class="control-group">
+                    <label>Left Motor Speed: <span id="left-val" class="value-display">128</span></label>
+                    <input type="range" id="left-slider" min="0" max="255" value="128">
+                </div>
+                <div class="control-group">
+                    <label>Right Motor Speed: <span id="right-val" class="value-display">128</span></label>
+                    <input type="range" id="right-slider" min="0" max="255" value="128">
+                </div>
+                <div class="inspector-card">
+                    <label>Encoded Payload (2-byte Buffer):</label>
+                    <div id="motor-payload" class="inspector-grid">
+                        <!-- Bytes will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lab 2: Sensor Decoder -->
+            <section class="card">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Sensor Decoder Lab
+                </h2>
+                <div class="control-group">
+                    <label>Hex Input (16-bit):</label>
+                    <input type="text" id="hex-input" class="hex-input" value="03E8" maxlength="4">
+                </div>
+                <div class="endian-toggle">
+                    <button id="btn-be" class="btn active">Big-Endian</button>
+                    <button id="btn-le" class="btn">Little-Endian</button>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <label>Decoded Value:</label>
+                    <div id="decoded-value" class="value-display" style="font-size: 2rem;">1000</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Global Inspector -->
+        <section class="card" style="margin-top: 1.5rem;">
+            <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+                Memory Inspector
+            </h2>
+            <div id="global-inspector" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <!-- Inspector elements -->
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        import { encodeMotorSpeed, decodeSensorData, bufferToHex, bufferToBinary } from './parser.js';
+
+        const leftSlider = document.getElementById('left-slider');
+        const rightSlider = document.getElementById('right-slider');
+        const leftVal = document.getElementById('left-val');
+        const rightVal = document.getElementById('right-val');
+        const motorPayload = document.getElementById('motor-payload');
+
+        const hexInput = document.getElementById('hex-input');
+        const btnBE = document.getElementById('btn-be');
+        const btnLE = document.getElementById('btn-le');
+        const decodedValueDisplay = document.getElementById('decoded-value');
+
+        let isLittleEndian = false;
+
+        function updateMotorEncoder() {
+            const left = parseInt(leftSlider.value);
+            const right = parseInt(rightSlider.value);
+            leftVal.textContent = left;
+            rightVal.textContent = right;
+
+            const buffer = encodeMotorSpeed(left, right);
+            const hexArr = bufferToHex(buffer);
+            const binArr = bufferToBinary(buffer);
+
+            motorPayload.innerHTML = hexArr.map((hex, i) => `
+                <div class="byte-box active">
+                    <span class="byte-hex">${hex}</span>
+                    <span class="byte-bin">${binArr[i]}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateSensorDecoder() {
+            const hex = hexInput.value.padStart(4, '0');
+            const bytes = new Uint8Array(2);
+            bytes[0] = parseInt(hex.slice(0, 2), 16);
+            bytes[1] = parseInt(hex.slice(2, 4), 16);
+
+            try {
+                const value = decodeSensorData(bytes.buffer, isLittleEndian);
+                decodedValueDisplay.textContent = value;
+            } catch (e) {
+                decodedValueDisplay.textContent = 'ERROR';
+            }
+        }
+
+        leftSlider.addEventListener('input', updateMotorEncoder);
+        rightSlider.addEventListener('input', updateMotorEncoder);
+        
+        hexInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9a-fA-F]/g, '');
+            updateSensorDecoder();
+        });
+
+        btnBE.addEventListener('click', () => {
+            isLittleEndian = false;
+            btnBE.classList.add('active');
+            btnLE.classList.remove('active');
+            updateSensorDecoder();
+        });
+
+        btnLE.addEventListener('click', () => {
+            isLittleEndian = true;
+            btnLE.classList.add('active');
+            btnBE.classList.remove('active');
+            updateSensorDecoder();
+        });
+
+        // Initialize
+        updateMotorEncoder();
+        updateSensorDecoder();
+    </script>
+</body>
+</html>

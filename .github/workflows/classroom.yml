@@ -1,0 +1,47 @@
+name: GitHub Classroom Autograding
+on: [push]
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Project Structure
+        id: check-files
+        uses: education/autograding-command-grader@v1
+        with:
+          test-name: 'Check Files'
+          setup-command: ''
+          command: 'bash .github/scripts/check_files.sh'
+          timeout: 10
+          max-score: 30
+
+      - name: Run Parser Logic Tests
+        id: test-logic
+        uses: education/autograding-command-grader@v1
+        with:
+          test-name: 'Parser Logic'
+          setup-command: ''
+          command: 'node test/parser.test.js'
+          timeout: 10
+          max-score: 70
+
+      - name: Autograding Reporter
+        uses: education/autograding-grading-reporter@v1
+        env:
+          CHECK-FILES_RESULTS: "${{steps.check-files.outputs.result}}"
+          TEST-LOGIC_RESULTS: "${{steps.test-logic.outputs.result}}"
+        with:
+          runners: check-files,test-logic
